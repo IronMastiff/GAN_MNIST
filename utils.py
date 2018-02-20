@@ -22,7 +22,7 @@ def generator( z, out_dim, n_units = 128, reuse = False, alpha = 0.01 ):
 def discriminator( x, n_units = 128, reuse = False, alpha = 0.01 ):
     with tf.variable_scope( 'discriminator', reuse = reuse ):
         # Hidden layer
-        h1 = tf.layers.dense( x, n_units, activation = None )
+        h1 = tf.layers.dense( x, n_units, activation = None )    # 全链接层的高级封装接口
         # Leacy ReLU
         h1 = tf.maximum( alpha * h1, h1 )
 

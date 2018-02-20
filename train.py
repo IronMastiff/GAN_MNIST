@@ -131,10 +131,6 @@ with open( 'trian_samples.pkl', wb ) as f:
 # plt.legend()
 
 
-'''----------Tensorboard Printing Loss of Step 1------------'''
-merged, writer = utils.print_training_loss( d_loss, g_loss, sess )
-
-
 '''----------Generator samples from training----------'''
 def view_samples( epoch, samples ):
     fig, axes = plt.subplot( figsize = ( 7, 7 ), nrows = 4, sharey = True, sharex = True )
