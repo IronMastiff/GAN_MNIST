@@ -8,6 +8,7 @@ import utils
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets( 'MNIST_data' )
 
+
 '''-----------Hyperparameters------------'''
 # Size of input image to discriminator
 input_seze = 784
@@ -20,6 +21,7 @@ d_hidden_size = 128
 alpha = 0.01
 # Smoothing
 smooth = 0.1
+
 
 '''------------Build network-------------'''
 tf.reset_default_graph()
@@ -42,11 +44,14 @@ d_loss_real = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = 
 
 d_loss_fake = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = d_logits_fake,
                                                                        labels = tf.zeros_like( d_logits_fack ) ) )
-
 d_loss = d_loss_real + d_loss_fake
+# add d_loss to summary scalar
+tf.summary.scalar( 'd_loss', d_loss )
 
 g_loss = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = d_logits_fack,
                                                                   labels = tf.ones_like( d_logits_fack ) ) )
+# add g_loss to summary scalar
+tf.summary.scalar( 'g_loss', g_loss )
 
 
 '''---------------Optimizers----------------'''
@@ -69,7 +74,7 @@ samples = []
 losses = []
 # Only save generator variables
 saver = tf.train.Saver( var_list = g_vars )
-with tf.Session() as sess:
+with tf.InteractiveSession() as sess:
     sess.run( tf.global_variables_initializer() )
     for e in range( epoches ):
         for i in range( mnist.train.num_examples // batch_size ):
@@ -110,9 +115,27 @@ with open( 'trian_samples.pkl', wb ) as f:
 
 
 '''----------Print Training Loss----------'''
-fig, ax = plt.subplot()
-losses = np.array( losses )
-plt.plot( losses.T[0], label = 'Discriminator' )
-plt.plot( losses.T[1], label = 'Generator' )
-plt.title( 'Training Losses' )
-plt.legend()
+# fig, ax = plt.subplot()
+# losses = np.array( losses )
+# plt.plot( losses.T[0], label = 'Discriminator' )
+# plt.plot( losses.T[1], label = 'Generator' )
+# plt.title( 'Training Losses' )
+# plt.legend()
+
+
+'''----------Tensorboard Printing Loss of Step 1------------'''
+merged, writer = utils.print_training_loss( d_loss, g_loss, sess )
+
+
+'''----------Generator samples from training----------'''
+def view_samples( epoch, samples ):
+    fig, axes = plt.subplot( figsize = ( 7, 7 ), nrows = 4, sharey = True, sharex = True )
+    for ax, img in zip( axes.flatten(), samples[epoch] ):
+        ax.xaxis.set_visible( False )
+        ax.yaxis.set_visible( False )
+        im = ax.imshow( img.reshpae( ( 28, 28 ) ), cmap = 'Greys_r' )
+    return fig, axes
+
+# Load samples from generatro taken while training
+with open( 'train_samples.pkl', 'rb' ) as f:
+    samples = pkl.load( f )
