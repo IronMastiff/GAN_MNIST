@@ -11,12 +11,12 @@ mnist = input_data.read_data_sets( 'MNIST_data' )
 
 '''-----------Hyperparameters------------'''
 # Size of input image to discriminator
-input_seze = 784
+input_size = 784
 # Size of latent vector to genorator
 z_size = 100
 # Size of hidden layers in genorator and discriminator
-g_hidden_size = 128
-d_hidden_size = 128
+g_hidden_size = 2048
+d_hidden_size = 2048
 # Leak factor for leaky ReLU
 alpha = 0.01
 # Smoothing
@@ -40,16 +40,16 @@ d_model_fake, d_logits_fake = utils.discriminator( g_model, reuse = True, n_unit
 '''---Discriminator and Generator Losses---'''
 # Calculate losses
 d_loss_real = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = d_logits_real,
-                                                                       labels = tf.ones_like( d_logits_real ) * ( 1 - smooth ) ) )
+                                                                       labels = tf.ones_like( d_logits_real ) * ( 1 - smooth ), name = 'd_loss_real' ) )
 
 d_loss_fake = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = d_logits_fake,
-                                                                       labels = tf.zeros_like( d_logits_fake ) ) )
+                                                                       labels = tf.zeros_like( d_logits_fake ), name = 'd_loss_fake' ) )
 d_loss = d_loss_real + d_loss_fake
 # add d_loss to summary scalar
 tf.summary.scalar( 'd_loss', d_loss )
 
 g_loss = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = d_logits_fake,
-                                                                  labels = tf.ones_like( d_logits_fake ) ) )
+                                                                  labels = tf.ones_like( d_logits_fake ), name = 'g_loss' ) )
 # add g_loss to summary scalar
 tf.summary.scalar( 'g_loss', g_loss )
 
@@ -60,21 +60,21 @@ learning_rate = 0.002
 
 # Get the trainable_variables, split into G and D parts
 t_vars = tf.trainable_variables()
-g_vars = [var for var in t_vars if var.name.startwith( 'generator' )]
-d_vars = [var for var in t_vars if var.name.startwith( 'discriminator' )]
+g_vars = [var for var in t_vars if var.name.startswith( 'generator' )]
+d_vars = [var for var in t_vars if var.name.startswith( 'discriminator' )]
 
 d_train_opt = tf.train.AdamOptimizer( learning_rate ).minimize( d_loss, var_list = d_vars )
 g_train_opt = tf.train.AdamOptimizer( learning_rate ).minimize( g_loss, var_list = g_vars )
 
 
 '''-----------------Traing---------------------'''
-batch_size = 100
+batch_size = 20000
 epoches = 100
 samples = []
 # losses = []
 # Only save generator variables
 saver = tf.train.Saver( var_list = g_vars )
-with tf.InteractiveSession() as sess:
+with tf.Session() as sess:
     # Tensorboard Print Loss
     merged, writer = utils.print_training_loss( sess )
 
@@ -96,14 +96,14 @@ with tf.InteractiveSession() as sess:
 
         # At the end of each epoch, get the losses and print them out
         train_loss_d = sess.run( d_loss, {input_z : batch_z, input_real : batch_images} )
-        train_loss_g = g_loss.eval( g_loss, {input_z : batch_z} )
+        train_loss_g = g_loss.eval( {input_z : batch_z} )
 
 
         # Add data to tensorboard
         rs = sess.run( merged, feed_dict = {input_z : batch_z, input_real : batch_images} )
         writer.add_summary( rs, e )
 
-        print( 'Epoch {}/{}...' . format( e + 1, epochs ),
+        print( 'Epoch {}/{}...' . format( e + 1, epoches ),
                'Discriminator Loss: {:.4f}...' . format( train_loss_d ),
                'Generator Loss: {:.4f}' . format( train_loss_g ) )
         # Save losses to view after training
@@ -112,7 +112,7 @@ with tf.InteractiveSession() as sess:
         # Sample from generator as we're training for viewing afterwards
         sample_z = np.random.uniform( -1, 1, size = ( 16, z_size ) )
         gen_samples = sess.run(
-            utils.generator( input_z, input_size, n_uints = g_hidden_size, reuse = True, alpha = alpha),
+            utils.generator( input_z, input_size, n_units = g_hidden_size, reuse = True, alpha = alpha),
             feed_dict = {input_z : sample_z} )
         samples.append( gen_samples )
         saver.save( sess, './checkpoint/generator.ckpt' )
