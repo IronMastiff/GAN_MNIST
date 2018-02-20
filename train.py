@@ -43,13 +43,13 @@ d_loss_real = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = 
                                                                        labels = tf.ones_like( d_logits_real ) * ( 1 - smooth ) ) )
 
 d_loss_fake = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = d_logits_fake,
-                                                                       labels = tf.zeros_like( d_logits_fack ) ) )
+                                                                       labels = tf.zeros_like( d_logits_fake ) ) )
 d_loss = d_loss_real + d_loss_fake
 # add d_loss to summary scalar
 tf.summary.scalar( 'd_loss', d_loss )
 
-g_loss = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = d_logits_fack,
-                                                                  labels = tf.ones_like( d_logits_fack ) ) )
+g_loss = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = d_logits_fake,
+                                                                  labels = tf.ones_like( d_logits_fake ) ) )
 # add g_loss to summary scalar
 tf.summary.scalar( 'g_loss', g_loss )
 
@@ -71,10 +71,13 @@ g_train_opt = tf.train.AdamOptimizer( learning_rate ).minimize( g_loss, var_list
 batch_size = 100
 epoches = 100
 samples = []
-losses = []
+# losses = []
 # Only save generator variables
 saver = tf.train.Saver( var_list = g_vars )
 with tf.InteractiveSession() as sess:
+    # Tensorboard Print Loss
+    merged, writer = utils.print_training_loss( sess )
+
     sess.run( tf.global_variables_initializer() )
     for e in range( epoches ):
         for i in range( mnist.train.num_examples // batch_size ):
@@ -93,13 +96,18 @@ with tf.InteractiveSession() as sess:
 
         # At the end of each epoch, get the losses and print them out
         train_loss_d = sess.run( d_loss, {input_z : batch_z, input_real : batch_images} )
-        train_loss_g = g_loss.eval( {input_z : batch_z} )
+        train_loss_g = g_loss.eval( g_loss, {input_z : batch_z} )
+
+
+        # Add data to tensorboard
+        rs = sess.run( merged, feed_dict = {input_z : batch_z, input_real : batch_images} )
+        writer.add_summary( rs, e )
 
         print( 'Epoch {}/{}...' . format( e + 1, epochs ),
                'Discriminator Loss: {:.4f}...' . format( train_loss_d ),
                'Generator Loss: {:.4f}' . format( train_loss_g ) )
         # Save losses to view after training
-        losses.append( ( train_loss_d, train_loss_g ) )
+        # losses.append( ( train_loss_d, train_loss_g ) )
 
         # Sample from generator as we're training for viewing afterwards
         sample_z = np.random.uniform( -1, 1, size = ( 16, z_size ) )
