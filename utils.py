@@ -30,3 +30,13 @@ def discriminator( x, n_units = 128, reuse = False, alpha = 0.01 ):
         out = tf.sigmoid( logits )
 
         return out, logits
+
+def print_training_loss( sess ):
+    # tf.summary.scalar( 'd_loss', d_loss )
+    # tf.summary.scalar( 'g_loss', g_loss )
+
+    # merge all summary together
+    merged = tf.summary.merge_all()
+    writer = tf.summary.FileWriter( 'logs/', sess.graph )
+
+    return merged, writer
