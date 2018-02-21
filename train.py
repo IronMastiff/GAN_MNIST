@@ -15,8 +15,8 @@ input_size = 784
 # Size of latent vector to genorator
 z_size = 100
 # Size of hidden layers in genorator and discriminator
-g_hidden_size = 1024
-d_hidden_size = 1024
+g_hidden_size = 128
+d_hidden_size = 128
 # Leak factor for leaky ReLU
 alpha = 0.01
 # Smoothing
@@ -79,11 +79,11 @@ samples = []
 # Only save generator variables
 saver = tf.train.Saver( var_list = g_vars )
 with tf.Session() as sess:
+    # Tensorboard Print Loss
+    merged, writer = utils.print_training_loss(sess)
+
     sess.run( tf.global_variables_initializer() )
     for e in range( epoches ):
-        # Tensorboard Print Loss
-        merged, writer = utils.print_training_loss(sess)
-
         for i in range( mnist.train.num_examples // batch_size ):
             batch = mnist.train.next_batch( batch_size )
 
@@ -111,7 +111,6 @@ with tf.Session() as sess:
         # Add data to tensorboard
         rs = sess.run(merged, feed_dict={input_z: batch_z, input_real: batch_images})
         writer.add_summary(rs, e)
-        writer.flush()
 
         # Sample from generator as we're training for viewing afterwards
         sample_z = np.random.uniform( -1, 1, size = ( 16, z_size ) )
