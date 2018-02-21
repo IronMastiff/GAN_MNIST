@@ -15,8 +15,8 @@ input_size = 784
 # Size of latent vector to genorator
 z_size = 100
 # Size of hidden layers in genorator and discriminator
-g_hidden_size = 2048
-d_hidden_size = 2048
+g_hidden_size = 1024
+d_hidden_size = 1024
 # Leak factor for leaky ReLU
 alpha = 0.01
 # Smoothing
@@ -46,12 +46,12 @@ d_loss_fake = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = 
                                                                        labels = tf.zeros_like( d_logits_fake ), name = 'd_loss_fake' ) )
 d_loss = d_loss_real + d_loss_fake
 # add d_loss to summary scalar
-tf.summary.scalar( 'd_loss', d_loss )
+tf.summary.scalar('d_loss', d_loss)
 
 g_loss = tf.reduce_mean( tf.nn.sigmoid_cross_entropy_with_logits( logits = d_logits_fake,
                                                                   labels = tf.ones_like( d_logits_fake ), name = 'g_loss' ) )
 # add g_loss to summary scalar
-tf.summary.scalar( 'g_loss', g_loss )
+tf.summary.scalar('g_loss', g_loss)
 
 
 '''---------------Optimizers----------------'''
@@ -67,6 +67,10 @@ d_train_opt = tf.train.AdamOptimizer( learning_rate ).minimize( d_loss, var_list
 g_train_opt = tf.train.AdamOptimizer( learning_rate ).minimize( g_loss, var_list = g_vars )
 
 
+'''--------Print Loss and Image with Tensorboard--------'''
+
+
+
 '''-----------------Traing---------------------'''
 batch_size = 20000
 epoches = 100
@@ -75,11 +79,11 @@ samples = []
 # Only save generator variables
 saver = tf.train.Saver( var_list = g_vars )
 with tf.Session() as sess:
-    # Tensorboard Print Loss
-    merged, writer = utils.print_training_loss( sess )
-
     sess.run( tf.global_variables_initializer() )
     for e in range( epoches ):
+        # Tensorboard Print Loss
+        merged, writer = utils.print_training_loss(sess)
+
         for i in range( mnist.train.num_examples // batch_size ):
             batch = mnist.train.next_batch( batch_size )
 
@@ -98,27 +102,31 @@ with tf.Session() as sess:
         train_loss_d = sess.run( d_loss, {input_z : batch_z, input_real : batch_images} )
         train_loss_g = g_loss.eval( {input_z : batch_z} )
 
-
-        # Add data to tensorboard
-        rs = sess.run( merged, feed_dict = {input_z : batch_z, input_real : batch_images} )
-        writer.add_summary( rs, e )
-
         print( 'Epoch {}/{}...' . format( e + 1, epoches ),
                'Discriminator Loss: {:.4f}...' . format( train_loss_d ),
                'Generator Loss: {:.4f}' . format( train_loss_g ) )
         # Save losses to view after training
         # losses.append( ( train_loss_d, train_loss_g ) )
 
+        # Add data to tensorboard
+        rs = sess.run(merged, feed_dict={input_z: batch_z, input_real: batch_images})
+        writer.add_summary(rs, e)
+        writer.flush()
+
         # Sample from generator as we're training for viewing afterwards
         sample_z = np.random.uniform( -1, 1, size = ( 16, z_size ) )
         gen_samples = sess.run(
             utils.generator( input_z, input_size, n_units = g_hidden_size, reuse = True, alpha = alpha),
             feed_dict = {input_z : sample_z} )
+
+        '''--------Add generator picture to tensorboard--------'''
+        tf.summary.image('generater', gen_samples.reshape((-1, 28, 28, 1)))
+
         samples.append( gen_samples )
         saver.save( sess, './checkpoint/generator.ckpt' )
 
 # Save training generator samples
-with open( 'trian_samples.pkl', wb ) as f:
+with open( 'train_samples.pkl', 'wb' ) as f:
     pkl.dump( samples, f )
 
 
@@ -131,15 +139,15 @@ with open( 'trian_samples.pkl', wb ) as f:
 # plt.legend()
 
 
-'''----------Generator samples from training----------'''
-def view_samples( epoch, samples ):
-    fig, axes = plt.subplot( figsize = ( 7, 7 ), nrows = 4, sharey = True, sharex = True )
-    for ax, img in zip( axes.flatten(), samples[epoch] ):
-        ax.xaxis.set_visible( False )
-        ax.yaxis.set_visible( False )
-        im = ax.imshow( img.reshpae( ( 28, 28 ) ), cmap = 'Greys_r' )
-    return fig, axes
-
-# Load samples from generatro taken while training
-with open( 'train_samples.pkl', 'rb' ) as f:
-    samples = pkl.load( f )
+# '''----------Generator samples from training----------'''
+# def view_samples( epoch, samples ):
+#     fig, axes = plt.subplot( figsize = ( 7, 7 ), nrows = 4, sharey = True, sharex = True )
+#     for ax, img in zip( axes.flatten(), samples[epoch] ):
+#         ax.xaxis.set_visible( False )
+#         ax.yaxis.set_visible( False )
+#         im = ax.imshow( img.reshpae( ( 28, 28 ) ), cmap = 'Greys_r' )
+#     return fig, axes
+#
+# # Load samples from generatro taken while training
+# with open( 'train_samples.pkl', 'rb' ) as f:
+#     samples = pkl.load( f )
