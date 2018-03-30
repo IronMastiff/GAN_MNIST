@@ -47,5 +47,5 @@ class Flag( object ):
 
 def read_config_file( config_file ):
     with open( config_file ) as f:
-        FLAGE = flag( **yaml.load( f ) )
-    return FLAGE
+        FLAGES = flag( **yaml.load( f ) )
+    return FLAGES
