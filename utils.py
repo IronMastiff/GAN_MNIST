@@ -9,8 +9,8 @@ def model_inputs( real_dim, z_dim ):
 def generator( z, out_dim, n_units = 128, reuse = False, alpha = 0.01 ):
     with tf.variable_scope( 'generator', reuse = reuse ):
         # Hidden layer
-        h1 = tf.layers.dense( z, n_units, activation = None )    # 全链接层的高级封装接口
-        # Leaky ReLU
+        h1 = tf.layers.d# Leaky ReLUense( z, n_units, activation = None )    # 全链接层的高级封装接口
+
         h1 = tf.maximum( alpha * h1, h1 )
 
         # Logits and tanh output
@@ -40,3 +40,12 @@ def print_training_loss( sess ):
     writer = tf.summary.FileWriter( 'logs/', sess.graph )
 
     return merged, writer
+
+class Flag( object ):
+    def __init__( self,**entries  ):
+        self.__dict__.update( entries )
+
+def read_config_file( config_file ):
+    with open( config_file ) as f:
+        FLAGE = flag( **yaml.load( f ) )
+    return FLAGE
