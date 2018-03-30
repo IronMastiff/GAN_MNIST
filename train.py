@@ -2,11 +2,20 @@ import pickle as pkl
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import argparse
 
 import utils
 
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets( 'MNIST_data' )
+
+
+'''--------Load the config file--------'''
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument( '-c', '--config', default = 'config.yml', help = 'The path to the config file' )
+
+    return parser.parse_args()
 
 
 '''-----------Hyperparameters------------'''
@@ -150,3 +159,6 @@ with open( 'train_samples.pkl', 'wb' ) as f:
 # # Load samples from generatro taken while training
 # with open( 'train_samples.pkl', 'rb' ) as f:
 #     samples = pkl.load( f )
+
+if __name__ == '__main__':
+
