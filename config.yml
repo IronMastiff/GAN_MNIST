@@ -1,0 +1,17 @@
+## set Basic configuration and alpha
+g_hidden_size: 256
+d_hidden_size: 256
+alpha: 0.01
+
+## set Batch size and epoche
+batch_size: 100
+epoches: 100
+
+## set learning_rate
+learning_rate: 0.002
+
+## the path of the generate file
+generate_file: generate/
+
+## num to generate mast in range 9, or equ to "All"
+select_label: 'All'
